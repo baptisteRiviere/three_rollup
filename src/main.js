@@ -7,15 +7,18 @@ import { Octree } from 'three/examples/jsm/math/Octree.js';
 
 // INIT SPECIFICS TO BUCKET GAME
 
-const STEPS_PER_FRAME = 4;
+
 let playerCollider;
 let playerDirection = new THREE.Vector3();
+let targetCollider;
+const worldOctree = new Octree();
+
+const STEPS_PER_FRAME = 4;
 const SPHERE_RADIUS = 0.2;
 const GRAVITY = 60;
-const BUCKET_POSITION = new THREE.Vector3(0, -2, -6)
+const BUCKET_POSITION = new THREE.Vector3(0, -2, -6);
 const TARGET_SPHERE_RADIUS = 1.2;
 let IMPULSE = 30;
-const worldOctree = new Octree();
 
 // CONTAINER - SCENE - CAMERA - OCTREE
 
@@ -63,8 +66,7 @@ const bucketLoadingPromise = new Promise((resolve, reject) => {
     const z = BUCKET_POSITION.z;
     bucket.position.set(x, y, z);
     worldOctree.fromGraphNode(bucket);
-    //camera.lookAt(x, y, z);
-    //targetCollider = new THREE.Sphere(BUCKET_POSITION, TARGET_SPHERE_RADIUS);
+    targetCollider = new THREE.Sphere(BUCKET_POSITION, TARGET_SPHERE_RADIUS);
     scene.add(bucket);
   })
 
@@ -118,12 +120,15 @@ function onWindowResize() {
 // PHYSICS
 
 function throwBall() {
-  console.log(sphere.mesh.position)
   sphere.hold = false;
-  camera.getWorldDirection(playerDirection);
-  playerDirection.y += 0.5; // permit to give a smooth curve to the ball
-  sphere.collider.center.copy(playerCollider.end).addScaledVector(playerDirection, playerCollider.radius * 1.5);
+  let e = controller.matrixWorld.elements
+  let playerDirection = new THREE.Vector3(-e[8], -e[9], -e[10]).normalize()
+  sphere.collider.center.copy(playerCollider.end) // todo : delete player collider
   sphere.velocity.copy(playerDirection).multiplyScalar(IMPULSE);
+  sphere.collider.center.set(0, 0, - 0.3).applyMatrix4(controller.matrixWorld);
+  sphere.mesh.position.copy(sphere.collider.center);
+  sphere.mesh.quaternion.setFromRotationMatrix(controller.matrixWorld);
+  console.log(sphere.mesh.position)
 }
 
 function updateSphere(deltaTime) {
@@ -140,7 +145,6 @@ function updateSphere(deltaTime) {
   sphere.mesh.position.copy(sphere.collider.center);
 }
 
-/*
 function targetReached(target, object) {
   // checking if the target is reached by the object
   const d2 = target.center.distanceToSquared(object.collider.center);
@@ -149,6 +153,7 @@ function targetReached(target, object) {
   return (d2 < r2);
 }
 
+/*
 function groundIntersected(object) {
   if (object.collider.center.y - object.collider.radius < 1) {
     let x = object.collider.center.x;
@@ -166,7 +171,7 @@ function spawn(x, y, z) {
   //camera.lookAt(bucket)
   // player collider
   let capsuleStart = new THREE.Vector3(0, -0.3, 0).add(camera.position);
-  let capsuleEnd = new THREE.Vector3(0.3, -0.1, 0).add(camera.position);
+  let capsuleEnd = camera.position;
   playerCollider = new Capsule(capsuleStart, capsuleEnd, 0.35);
   // object
   sphere.collider.center.set(x, y, z)
@@ -195,6 +200,13 @@ function render() {
     updateSphere(deltaTime);
     //groundIntersected(sphere);
   }
+
+  if (targetReached(targetCollider, sphere)) {
+    console.log("bravoooo")
+    //spawn(2, 5, 5);
+    //message.innerText = "Congratulations ! As I see you would have been the best bucketball player in the middle age. Play as you want !";
+    //menuPanel.style.display = 'block';
+  };
 
   renderer.render(scene, camera);
 
