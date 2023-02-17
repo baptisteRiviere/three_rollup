@@ -45,6 +45,24 @@ container.appendChild(renderer.domElement);
 
 document.body.appendChild(ARButton.createButton(renderer));
 
+// AUDIO
+
+
+/*
+const audioLoader = new THREE.AudioLoader();
+
+const listener = new THREE.AudioListener();
+
+camera.add(listener);
+let audio;
+
+audioLoader.load('assets/audios/ping_pong.mp3', function (buffer) {
+  audio = new THREE.PositionalAudio(listener);
+  audio.setBuffer(buffer);
+})
+*/
+
+
 // LOADING OBJECTS
 
 let loader = new GLTFLoader().setPath('assets/models/');
@@ -139,6 +157,7 @@ function updateSphere(deltaTime) {
   if (result) {
     sphere.velocity.addScaledVector(result.normal, - result.normal.dot(sphere.velocity) * 1.5);
     sphere.collider.center.add(result.normal.multiplyScalar(result.depth));
+    //audio.play();
   } else {
     sphere.velocity.y -= GRAVITY * deltaTime;
   }
