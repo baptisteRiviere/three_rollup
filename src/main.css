@@ -5,3 +5,7 @@ body {
   overflow: hidden;
   background-color: black;
 }
+
+#messageDiv {
+  color: white;
+}
