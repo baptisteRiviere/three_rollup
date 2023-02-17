@@ -152,7 +152,7 @@ let sphere = {
   hold: true
 };
 
-// SPAWN INITIALISATION
+// SPAWN INITIALISATION *
 
 function spawn(x, y, z) {
   // camera 
