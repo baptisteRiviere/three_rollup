@@ -7,8 +7,6 @@ import { Octree } from 'three/examples/jsm/math/Octree.js';
 
 // INIT SPECIFICS TO BUCKET GAME
 
-
-let playerCollider;
 let playerDirection = new THREE.Vector3();
 let targetCollider;
 const worldOctree = new Octree();
@@ -116,19 +114,17 @@ function onWindowResize() {
 
 }
 
-
 // PHYSICS
 
 function throwBall() {
   sphere.hold = false;
-  let e = controller.matrixWorld.elements
-  let playerDirection = new THREE.Vector3(-e[8], -e[9], -e[10]).normalize()
-  sphere.collider.center.copy(playerCollider.end) // todo : delete player collider
+  let elements = controller.matrixWorld.elements;
+  playerDirection = new THREE.Vector3(-elements[8], -elements[9], -elements[10]).normalize()
+  sphere.collider.center.copy(camera.position)
   sphere.velocity.copy(playerDirection).multiplyScalar(IMPULSE);
   sphere.collider.center.set(0, 0, - 0.3).applyMatrix4(controller.matrixWorld);
   sphere.mesh.position.copy(sphere.collider.center);
   sphere.mesh.quaternion.setFromRotationMatrix(controller.matrixWorld);
-  console.log(sphere.mesh.position)
 }
 
 function updateSphere(deltaTime) {
@@ -145,51 +141,39 @@ function updateSphere(deltaTime) {
   sphere.mesh.position.copy(sphere.collider.center);
 }
 
-function targetReached(target, object) {
+function targetReached(target) {
   // checking if the target is reached by the object
-  const d2 = target.center.distanceToSquared(object.collider.center);
-  const r = target.radius + object.collider.radius;
+  const d2 = target.center.distanceToSquared(sphere.collider.center);
+  const r = target.radius + sphere.collider.radius;
   const r2 = r * r;
   return (d2 < r2);
 }
 
-/*
-function groundIntersected(object) {
-  if (object.collider.center.y - object.collider.radius < 1) {
-    let x = object.collider.center.x;
-    let z = object.collider.center.z;
-    spawn(x, CAMERA_HEIGHT, z);
-  }
+
+function groundIntersected() {
+  return (sphere.collider.center.y - sphere.collider.radius < -3);
 }
-*/
 
-// SPAWN
-
-function spawn(x, y, z) {
-  // camera 
-  camera.position.set(x, y, z);
-  //camera.lookAt(bucket)
-  // player collider
-  let capsuleStart = new THREE.Vector3(0, -0.3, 0).add(camera.position);
-  let capsuleEnd = camera.position;
-  playerCollider = new Capsule(capsuleStart, capsuleEnd, 0.35);
-  // object
-  sphere.collider.center.set(x, y, z)
+function returnSphereToPlayer() {
+  sphere.collider.center.copy(camera.position);
   sphere.mesh.position.copy(sphere.collider.center);
   sphere.hold = true;
 }
 
+// ACTION
+
 const clock = new THREE.Clock();
-spawn(0, 1.6, 0);
-animate();
+bucketLoadingPromise.then(() => {
+  console.log("logged")
+  returnSphereToPlayer();
+  animate();
+})
+
 
 // ANIMATION AND RENDERER
 
 function animate() {
-
-
   renderer.setAnimationLoop(render);
-
 }
 
 function render() {
@@ -198,11 +182,13 @@ function render() {
 
   if (!sphere.hold) {
     updateSphere(deltaTime);
-    //groundIntersected(sphere);
+    if (groundIntersected(sphere)) {
+      returnSphereToPlayer();
+    };
   }
 
-  if (targetReached(targetCollider, sphere)) {
-    console.log("bravoooo")
+  if (targetReached(targetCollider)) {
+    console.log("oui")
     //spawn(2, 5, 5);
     //message.innerText = "Congratulations ! As I see you would have been the best bucketball player in the middle age. Play as you want !";
     //menuPanel.style.display = 'block';
@@ -211,5 +197,7 @@ function render() {
   renderer.render(scene, camera);
 
 }
+
+
 
 
